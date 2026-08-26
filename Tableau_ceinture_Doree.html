@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Ceinture DOREE — Calcul posé</title>
+<style>
+  :root {
+    --belt-color: #B8860B;
+    --belt-color-pale: color-mix(in srgb, var(--belt-color) 16%, white);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+    background: #f4f4f4; height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    background: var(--belt-color-pale); padding: 14px 24px; display: flex;
+    align-items: center; justify-content: space-between; border-bottom: 3px solid var(--belt-color);
+  }
+  header h1 { margin: 0; font-size: 1.8rem; color: #1a1a1a; }
+  header a.home { text-decoration: none; color: #555; font-size: 1.3rem; margin-right: 14px; }
+  #progress-btn {
+    font-size: 1.5rem; font-weight: bold; background: white; border: 2px solid #1a1a1a;
+    border-radius: 24px; padding: 8px 22px; cursor: pointer;
+  }
+  #progress-btn:hover { background: #eee; }
+  main {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px; text-align: center; position: relative;
+  }
+  #carte-indicator {
+    font-size: 2.2rem; font-weight: 900; color: var(--belt-color);
+    background: var(--belt-color-pale); border: 3px solid var(--belt-color);
+    border-radius: 14px; padding: 14px 36px; margin-bottom: 40px; letter-spacing: 0.03em;
+  }
+  #palier-label { font-size: 1.5rem; color: var(--belt-color); font-weight: bold; margin-bottom: 44px; text-transform: uppercase; }
+  #calc-area { font-size: 4rem; font-weight: bold; color: #1a1a1a; margin-bottom: 56px; }
+  .rappel-tag { font-size: 1.4rem; color: #0B5FA5; font-style: italic; display: block; margin-top: 14px; }
+
+  .grid-wrap { display: inline-flex; gap: 45px; flex-wrap: wrap; justify-content: center; }
+  table.calc-grid { border-collapse: collapse; }
+  table.calc-grid td {
+    width: 4.8rem; height: 4.8rem; border: 2px solid #d5d5d5; text-align: center;
+    font-size: 2.7rem; font-weight: bold; position: relative;
+  }
+  table.calc-grid td.op-cell { border: none; font-size: 2.7rem; }
+  table.calc-grid tr.result-row td { border-top: 4px solid #1a1a1a; }
+  .carry-circle {
+    width: 2.6rem; height: 2.6rem; border-radius: 50%; border: 3px solid #999;
+    margin: 0 auto; display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; background: white;
+  }
+  .carry-circle.filled { color: white; font-weight: bold; }
+  .cassage-box {
+    border: 2px dashed #b7b7b7; border-radius: 6px; width: 4.5rem; height: 2.7rem;
+    margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+  }
+  .struck { text-decoration: line-through; color: #8a8a8a !important; }
+
+  #btn-correction {
+    font-size: 1.5rem; padding: 14px 32px; border-radius: 10px; border: none;
+    background: var(--belt-color); color: white; cursor: pointer; font-weight: bold;
+  }
+  #btn-correction:hover { filter: brightness(0.92); }
+  #btn-autre-face {
+    font-size: 1.5rem; padding: 14px 32px; border-radius: 10px; border: 2px solid var(--belt-color);
+    background: white; color: var(--belt-color); cursor: pointer; font-weight: bold;
+  }
+  #btn-autre-face:hover { background: var(--belt-color-pale); }
+
+
+  nav.arrows { display: flex; justify-content: space-between; align-items: center; padding: 14px 30px; }
+  nav.arrows button {
+    width: 60px; height: 60px; border-radius: 50%; border: 2px solid #1a1a1a; background: white;
+    font-size: 1.8rem; cursor: pointer;
+  }
+  nav.arrows button:hover { background: #eee; }
+  nav.arrows span { font-size: 1.15rem; color: #555; }
+
+  #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 10; }
+  #overlay.show { display: flex; }
+  #picker { background: white; border-radius: 12px; padding: 28px 32px; max-width: 90vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
+  #picker h2 { margin: 0 0 18px 0; font-size: 1.5rem; color: var(--belt-color); font-weight: bold; }
+  #picker-jump { display: flex; gap: 10px; margin-bottom: 20px; }
+  #picker-input { flex: 1; min-width: 260px; padding: 10px 14px; font-size: 1rem; border: 2px solid var(--belt-color); border-radius: 8px; }
+  #picker-go { padding: 10px 22px; font-size: 1rem; font-weight: bold; cursor: pointer; background: var(--belt-color); color: white; border: none; border-radius: 8px; }
+  #picker-go:hover { filter: brightness(0.92); }
+  #picker-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; margin-bottom: 22px; }
+  #picker-grid button { padding: 10px 0; border: 2px solid var(--belt-color); border-radius: 10px; background: white; color: var(--belt-color); font-weight: bold; font-size: 1rem; cursor: pointer; }
+  #picker-grid button:hover { background: var(--belt-color-pale); }
+  #picker-grid button.current { background: var(--belt-color); color: white; }
+  #picker-close { background: #8a8a8a; color: white; border: none; border-radius: 8px; padding: 10px 22px; font-size: 1rem; cursor: pointer; }
+  #picker-close:hover { background: #767676; }
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;">
+    <a class="home" href="index.html" title="Retour à l'index">🏠</a>
+    <h1>Ceinture DOREE — Calcul posé</h1>
+  </div>
+  <button id="progress-btn">Carte 1 / 30</button>
+</header>
+<main>
+  <div id="carte-indicator"></div>
+  <div id="palier-label"></div>
+  <div id="calc-area"></div>
+  <div style="display:flex; gap:28px; margin-top:8px;">
+    <button id="btn-autre-face">Voir le calcul B →</button>
+    <button id="btn-correction">Voir la correction (espace)</button>
+  </div>
+</main>
+<nav class="arrows">
+  <button id="prev">←</button>
+  <span>Flèches ← → au clavier, ou clique sur le numéro en haut</span>
+  <button id="next">→</button>
+</nav>
+
+<div id="overlay">
+  <div id="picker">
+    <h2>Aller à la carte...</h2>
+    <div id="picker-jump">
+      <input type="number" id="picker-input" min="1" placeholder="N° de carte (1-30)">
+      <button id="picker-go">Aller</button>
+    </div>
+    <div id="picker-grid"></div>
+    <button id="picker-close">Fermer</button>
+  </div>
+</div>
+
+<script>
+const CARDS = [{"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [223, 2], "op": "x"}, {"terms": [101, 9], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [101, 4], "op": "x"}, {"terms": [103, 2], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [111, 2], "op": "x"}, {"terms": [210, 3], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [221, 4], "op": "x"}, {"terms": [404, 2], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [414, 2], "op": "x"}, {"terms": [223, 3], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [110, 3], "op": "x"}, {"terms": [303, 2], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [123, 3], "op": "x"}, {"terms": [141, 2], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [222, 4], "op": "x"}, {"terms": [211, 4], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [240, 2], "op": "x"}, {"terms": [304, 2], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [120, 4], "op": "x"}, {"terms": [102, 2], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [101, 5], "op": "x"}, {"terms": [231, 3], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [101, 3], "op": "x"}, {"terms": [313, 2], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [120, 3], "op": "x"}, {"terms": [322, 2], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [311, 2], "op": "x"}, {"terms": [202, 2], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION SANS RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [102, 4], "op": "x"}, {"terms": [323, 2], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [684, 4], "op": "x"}, {"terms": [747, 5], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [936, 6], "op": "x"}, {"terms": [590, 4], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [767, 7], "op": "x"}, {"terms": [803, 9], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [555, 6], "op": "x"}, {"terms": [789, 3], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [408, 8], "op": "x"}, {"terms": [416, 9], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [153, 8], "op": "x"}, {"terms": [934, 6], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [427, 5], "op": "x"}, {"terms": [426, 6], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [318, 3], "op": "x"}, {"terms": [867, 7], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [226, 7], "op": "x"}, {"terms": [888, 5], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [625, 6], "op": "x"}, {"terms": [427, 2], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [462, 6], "op": "x"}, {"terms": [668, 8], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [498, 4], "op": "x"}, {"terms": [803, 3], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [133, 7], "op": "x"}, {"terms": [993, 3], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [164, 4], "op": "x"}, {"terms": [195, 3], "op": "x"}]}, {"recto": "MULTIPLICATION 3 CHIFFRES x 1 CHIFFRE", "verso": "MULTIPLICATION AVEC RETENUE", "rappel": false, "guided": false, "calcs": [{"terms": [927, 7], "op": "x"}, {"terms": [519, 6], "op": "x"}]}];
+const OP_SYMBOL = {"+":"+", "-":"\u2013", "x":"\u00d7"};
+let cardIdx = 0;
+let subIdx = 0;          // 0 = calcul A, 1 = calcul B
+let showingCorrection = false;
+
+function computeResult(terms, op){
+  if(op === "+") return terms.reduce((a,b)=>a+b,0);
+  if(op === "-") return terms[0]-terms[1];
+  if(op === "x") return terms[0]*terms[1];
+}
+function carryColumns(terms, ncols){
+  let carry=0, out=[];
+  for(let c=0;c<ncols;c++){
+    out.push(carry);
+    let s = terms.reduce((a,t)=> a + Math.floor(t/10**c)%10, 0) + carry;
+    carry = Math.floor(s/10);
+  }
+  return out;
+}
+function multCarryColumns(a, m, ncols){
+  let carry=0, out=[];
+  for(let c=0;c<ncols;c++){
+    out.push(carry);
+    let da = Math.floor(a/10**c)%10;
+    let prod = da*m + carry;
+    carry = Math.floor(prod/10);
+  }
+  return out;
+}
+function borrowAdjust(top, bottom, ncols){
+  let effective=[], changed=[], borrow=0;
+  for(let c=0;c<ncols;c++){
+    let da = Math.floor(top/10**c)%10 - borrow;
+    let db = Math.floor(bottom/10**c)%10;
+    if(da < db){ da += 10; borrow = 1; } else { borrow = 0; }
+    effective.push(da);
+    changed.push(da !== Math.floor(top/10**c)%10);
+  }
+  return {effective, changed};
+}
+function colColor(colI, ncols){
+  const CF = ["#1F6FE0","#E0281F","#1FA33A","#1A1A1A"];
+  const fromRight = ncols-1-colI;
+  return CF[Math.min(fromRight, CF.length-1)];
+}
+
+function renderGrid(terms, op, showResult){
+  const digitStrs = terms.map(t=>String(t));
+  const resultStr = String(computeResult(terms, op));
+  const ncols = Math.max(Math.max(...digitStrs.map(s=>s.length)), resultStr.length);
+  const nTerms = terms.length;
+
+  let carryIn = null, borrowEff=null, borrowChanged=null;
+  if(op === "+") carryIn = carryColumns(terms, ncols);
+  else if(op === "x") carryIn = multCarryColumns(terms[0], terms[1], ncols);
+  else if(op === "-"){ const r = borrowAdjust(terms[0], terms[1], ncols); borrowEff=r.effective; borrowChanged=r.changed; }
+
+  // Toutes les lignes ont EXACTEMENT ncols+1 cellules (colonne signe fixe en position 0)
+  let html = '<table class="calc-grid">';
+  const hasExtraRow = (op === "+" || op === "-" || op === "x");
+
+  if(hasExtraRow){
+    html += '<tr><td class="op-cell"></td>';
+    for(let colI=0; colI<ncols; colI++){
+      const place = ncols-1-colI;
+      let cell = '';
+      if((op==="+"||op==="x") && colI < ncols-1){
+        const filled = showResult && carryIn[place] > 0;
+        const col = colColor(colI, ncols);
+        cell = `<div class="carry-circle ${filled?'filled':''}" style="border-color:${col};${filled?`background:${col};`:''}">${filled?carryIn[place]:''}</div>`;
+      } else if(op === "-"){
+        const col = colColor(colI, ncols);
+        const val = (showResult && borrowChanged[place]) ? borrowEff[place] : '';
+        cell = `<div class="cassage-box" style="color:${col};border-color:${col};">${val}</div>`;
+      }
+      html += `<td class="op-cell">${cell}</td>`;
+    }
+    html += '</tr>';
+  }
+
+  for(let i=0;i<nTerms;i++){
+    const signCell = (i===nTerms-1) ? `<td class="op-cell">${OP_SYMBOL[op]}</td>` : `<td class="op-cell"></td>`;
+    html += '<tr>' + signCell;
+    const s = digitStrs[i];
+    const pad = ncols - s.length;
+    for(let colI=0; colI<ncols; colI++){
+      const place = ncols-1-colI;
+      let content = '';
+      if(colI >= pad){
+        const ch = s[colI-pad];
+        if(i===0 && op==="-" && showResult && borrowChanged[place]){
+          content = `<span class="struck">${ch}</span>`;
+        } else {
+          content = `<span style="color:${colColor(colI,ncols)}">${ch}</span>`;
+        }
+      }
+      html += `<td>${content}</td>`;
+    }
+    html += '</tr>';
+  }
+
+  html += '<tr class="result-row"><td class="op-cell"></td>';
+  const pad = ncols - resultStr.length;
+  for(let colI=0; colI<ncols; colI++){
+    let content = '';
+    if(showResult && colI >= pad){
+      content = `<span style="color:${colColor(colI,ncols)}">${resultStr[colI-pad]}</span>`;
+    }
+    html += `<td>${content}</td>`;
+  }
+  html += '</tr>';
+  html += '</table>';
+  return html;
+}
+
+function renderLine(terms, op){
+  return terms.map(t=>String(t)).join(` ${OP_SYMBOL[op]} `) + ' =';
+}
+
+function render(){
+  showingCorrection = false;
+  updateCalcArea();
+  document.getElementById('progress-btn').textContent = `Carte ${cardIdx+1} / ${CARDS.length}`;
+}
+function updateCalcArea(){
+  const card = CARDS[cardIdx];
+  const calc = card.calcs[subIdx];
+  const lettre = subIdx === 0 ? 'A' : 'B';
+  document.getElementById('carte-indicator').innerHTML =
+    `CARTE ${cardIdx+1} — CALCUL ${lettre}` + (card.rappel ? '<span class="rappel-tag">(rappel)</span>' : '');
+  document.getElementById('palier-label').innerHTML = showingCorrection ? card.verso : card.recto;
+  const area = document.getElementById('calc-area');
+  if(!showingCorrection && !card.guided){
+    area.innerHTML = renderLine(calc.terms, calc.op);
+  } else {
+    area.innerHTML = '<div class="grid-wrap">' + renderGrid(calc.terms, calc.op, showingCorrection) + '</div>';
+  }
+  document.getElementById('btn-correction').textContent =
+    showingCorrection ? 'Retour à l\'énoncé (espace)' : 'Voir la correction (espace)';
+  document.getElementById('btn-autre-face').textContent =
+    subIdx === 0 ? 'Voir le calcul B →' : '← Voir le calcul A';
+}
+function toggleCorrection(){ showingCorrection = !showingCorrection; updateCalcArea(); }
+function toggleFace(){ subIdx = subIdx === 0 ? 1 : 0; showingCorrection = false; updateCalcArea(); }
+function go(delta){
+  cardIdx = (cardIdx + delta + CARDS.length) % CARDS.length;
+  subIdx = 0;
+  render();
+}
+function goTo(n){
+  cardIdx = Math.max(0, Math.min(CARDS.length-1, n-1));
+  subIdx = 0;
+  render();
+  closePicker();
+}
+
+function openPicker(){
+  const grid = document.getElementById('picker-grid');
+  grid.innerHTML = '';
+  CARDS.forEach((card, i) => {
+    const b = document.createElement('button');
+    b.textContent = i+1;
+    if(i === cardIdx) b.classList.add('current');
+    b.onclick = () => goTo(i+1);
+    grid.appendChild(b);
+  });
+  document.getElementById('overlay').classList.add('show');
+}
+function closePicker(){ document.getElementById('overlay').classList.remove('show'); }
+
+document.getElementById('progress-btn').onclick = openPicker;
+document.getElementById('picker-close').onclick = closePicker;
+document.getElementById('overlay').onclick = (e)=>{ if(e.target.id==='overlay') closePicker(); };
+document.getElementById('picker-go').onclick = ()=>{
+  const v = parseInt(document.getElementById('picker-input').value);
+  if(v) goTo(v);
+};
+document.getElementById('prev').onclick = ()=>go(-1);
+document.getElementById('next').onclick = ()=>go(1);
+document.getElementById('btn-correction').onclick = toggleCorrection;
+document.getElementById('btn-autre-face').onclick = toggleFace;
+document.addEventListener('keydown', (e)=>{
+  if(document.getElementById('overlay').classList.contains('show')) return;
+  if(e.key === 'ArrowRight') go(1);
+  else if(e.key === 'ArrowLeft') go(-1);
+  else if(e.key === ' '){ e.preventDefault(); toggleCorrection(); }
+});
+
+render();
+</script>
+</body>
+</html>

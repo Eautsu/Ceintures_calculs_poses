@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Ceintures de calcul posé — CE1</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+    background: #f4f4f4; padding: 40px 24px;
+  }
+  h1 { text-align: center; color: #1a1a1a; margin-bottom: 6px; }
+  p.sub { text-align: center; color: #666; margin-top: 0; margin-bottom: 36px; }
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px; max-width: 1000px; margin: 0 auto;
+  }
+  .belt-card {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 20px; border-radius: 12px; border: 3px solid var(--c);
+    background: color-mix(in srgb, var(--c) 12%, white);
+  }
+  .belt-link {
+    display: flex; flex-direction: column; gap: 6px; text-decoration: none;
+    transition: transform 0.15s;
+  }
+  .belt-link:hover { transform: translateY(-3px); }
+  .belt-name { font-size: 1.3rem; font-weight: bold; color: #1a1a1a; }
+  .belt-count { font-size: 0.95rem; color: #555; }
+  .belt-op { font-size: 1rem; font-weight: 600; color: var(--c); }
+  .belt-details { margin-top: 4px; }
+  .belt-details summary {
+    cursor: pointer; font-size: 0.85rem; color: #666; user-select: none;
+  }
+  .belt-desc { font-size: 0.9rem; color: #333; line-height: 1.3; margin: 6px 0 0 0; }
+  .belt-mecanisme { font-size: 0.85rem; font-weight: 600; color: #333; margin: 8px 0 2px 0; }
+  .belt-tailles { font-size: 0.88rem; color: #333; margin: 4px 0 0 0; padding-left: 18px; line-height: 1.5; }
+  .belt-tailles li { margin-bottom: 2px; }
+</style>
+</head>
+<body>
+  <h1>Ceintures de calcul posé — CE1</h1>
+  <p class="sub">Clique sur une ceinture pour ouvrir son tableau interactif de projection.</p>
+  <div class="grid">
+    
+      <div class="belt-card" style="--c:#8C8C8C;">
+        <a class="belt-link" href="Tableau_ceinture_Blanche.html">
+          <span class="belt-name">BLANCHE</span>
+          <span class="belt-count">30 cartes · Étayage guidé</span>
+          <span class="belt-op">Addition</span>
+        </a>
+        <details class="belt-details">
+          <summary>Détails</summary>
+          
+          <ul class="belt-tailles"><li>2 chiffres + 1 chiffre</li><li>2 chiffres + 2 chiffres</li></ul>
+        </details>
+      </div>
+      <div class="belt-card" style="--c:#EDBA0A;">
+        <a class="belt-link" href="Tableau_ceinture_Jaune.html">
+          <span class="belt-name">JAUNE</span>
+          <span class="belt-count">45 cartes · Étayage guidé</span>
+          <span class="belt-op">Addition</span>
+        </a>
+        <details class="belt-details">
+          <summary>Détails</summary>
+          
+          <ul class="belt-tailles"><li>3 chiffres + 2 chiffres</li><li>3 chiffres + 3 chiffres</li><li>3 nombres à 2 chiffres</li></ul>
+        </details>
+      </div>
+      <div class="belt-card" style="--c:#D97606;">
+        <a class="belt-link" href="Tableau_ceinture_Orange.html">
+          <span class="belt-name">ORANGE</span>
+          <span class="belt-count">30 cartes · Étayage guidé</span>
+          <span class="belt-op">Addition</span>
+        </a>
+        <details class="belt-details">
+          <summary>Détails</summary>
+          <p class="belt-mecanisme">Avec retenue</p>
+          <ul class="belt-tailles"><li>2 chiffres + 1 chiffre</li><li>2 chiffres + 2 chiffres</li></ul>
+        </details>
+      </div>
+      <div class="belt-card" style="--c:#DB2777;">
+        <a class="belt-link" href="Tableau_ceinture_Rose.html">
+          <span class="belt-name">ROSE</span>
+          <span class="belt-count">45 cartes · Autonome</span>
+          <span class="belt-op">Addition</span>
+        </a>
+        <details class="belt-details">
+          <summary>Détails</summary>
+          <p class="belt-mecanisme">Avec retenue</p>
+          <ul class="belt-tailles"><li>3 chiffres + 2 chiffres</li><li>3 chiffres + 3 chiffres</li><li>3 nombres à 2 chiffres</li></ul>
+        </details>
+      </div>
+      <div class="belt-card" style="--c:#DC2626;">
+        <a class="belt-link" href="Tableau_ceinture_Rouge.html">
+          <span class="belt-name">ROUGE</span>
+          <span class="belt-count">50 cartes · Autonome</span>
+          <span class="belt-op">Addition</span>
+        </a>
+        <details class="belt-details">
+          <summary>Détails</summary>
+          <p class="belt-mecanisme">Avec et sans retenue</p>
+          <ul class="belt-tailles"><li>Synthèse de toutes les tailles précédentes</li></ul>
+        </details>
+      </div>
+      <div class="belt-card" style="--c:#4C9A5A;">
+        <a class="belt-link" href="Tableau_ceinture_Verte.html">
+          <span class="belt-name">VERTE</span>
+          <span class="belt-count">30 cartes · Étayage guidé</span>
+          <span class="belt-op">Soustraction</span>
+        </a>
+        <details class="belt-details">
+          <summary>Détails</summary>
+          <p class="belt-mecanisme">Sans cassage</p>
+          <ul class="belt-tailles"><li>2 chiffres - 1 chiffre</li><li>2 chiffres - 2 chiffres</li></ul>
+        </details>
+      </div>
+      <div class="belt-card" style="--c:#3E7CB1;">
+        <a class="belt-link" href="Tableau_ceinture_Bleue.html">
+          <span class="belt-name">BLEUE</span>
+          <span class="belt-count">30 cartes · Étayage guidé</span>
+          <span class="belt-op">Soustraction</span>
+        </a>
+        <details class="belt-details">
+          <summary>Détails</summary>
+          <p class="belt-mecanisme">Sans cassage</p>
+          <ul class="belt-tailles"><li>3 chiffres - 2 chiffres</li><li>3 chiffres - 3 chiffres</li></ul>
+        </details>
+      </div>
+      <div class="belt-card" style="--c:#143666;">
+        <a class="belt-link" href="Tableau_ceinture_Bleue_Foncee.html">
+          <span class="belt-name">BLEUE FONCEE</span>
+          <span class="belt-count">30 cartes · Étayage guidé</span>
+          <span class="belt-op">Soustraction</span>
+        </a>
+        <details class="belt-details">
+          <summary>Détails</summary>
+          <p class="belt-mecanisme">Avec cassage</p>
+          <ul class="belt-tailles"><li>2 chiffres - 1 chiffre</li><li>2 chiffres - 2 chiffres</li></ul>
+        </details>
+      </div>
+      <div class="belt-card" style="--c:#7A4B2A;">
+        <a class="belt-link" href="Tableau_ceinture_Marron.html">
+          <span class="belt-name">MARRON</span>
+          <span class="belt-count">30 cartes · Autonome</span>
+          <span class="belt-op">Soustraction</span>
+        </a>
+        <details class="belt-details">
+          <summary>Détails</summary>
+          <p class="belt-mecanisme">Avec cassage</p>
+          <ul class="belt-tailles"><li>3 chiffres - 2 chiffres</li><li>3 chiffres - 3 chiffres</li></ul>
+        </details>
+      </div>
+      <div class="belt-card" style="--c:#6B3494;">
+        <a class="belt-link" href="Tableau_ceinture_Violette.html">
+          <span class="belt-name">VIOLETTE</span>
+          <span class="belt-count">30 cartes · Autonome</span>
+          <span class="belt-op">Soustraction</span>
+        </a>
+        <details class="belt-details">
+          <summary>Détails</summary>
+          <p class="belt-mecanisme">Avec cassage</p>
+          <ul class="belt-tailles"><li>Zéro intercalé (ex. 500 - 238)</li></ul>
+        </details>
+      </div>
+      <div class="belt-card" style="--c:#1F2328;">
+        <a class="belt-link" href="Tableau_ceinture_Noire.html">
+          <span class="belt-name">NOIRE</span>
+          <span class="belt-count">30 cartes · Étayage guidé</span>
+          <span class="belt-op">Multiplication</span>
+        </a>
+        <details class="belt-details">
+          <summary>Détails</summary>
+          
+          <ul class="belt-tailles"><li>2 chiffres × 1 chiffre</li></ul>
+        </details>
+      </div>
+      <div class="belt-card" style="--c:#B8860B;">
+        <a class="belt-link" href="Tableau_ceinture_Doree.html">
+          <span class="belt-name">DOREE</span>
+          <span class="belt-count">30 cartes · Autonome</span>
+          <span class="belt-op">Multiplication</span>
+        </a>
+        <details class="belt-details">
+          <summary>Détails</summary>
+          
+          <ul class="belt-tailles"><li>3 chiffres × 1 chiffre</li></ul>
+        </details>
+      </div>
+  </div>
+</body>
+</html>
