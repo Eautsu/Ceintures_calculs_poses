@@ -419,12 +419,42 @@ const PAGE_TITLE = "Ceinture BLEUE FONCEE";
 const TEACHER_EMAIL = "euryale_tsipora@protonmail.me";
 const TEACHER_PIN = "0616";
 const EMAIL_ENABLED = false; // desactive temporairement l'ouverture de la messagerie en fin de seance ; le PDF continue d'etre genere et telecharge normalement
+const SESSION_STORAGE_KEY = 'calcpose_sessionLog';
+const NAME_STORAGE_KEY = 'calcpose_studentName';
 let cardIdx = 0;
 let showingCorrection = false;
 let teacherMode = false;
 let hasAttemptedCurrent = false;
-let sessionLog = []; // {carte, ok, results}
-let studentName = ""; // deja rempli si fiche personnalisee, vide sinon
+
+// La seance est memorisee dans le navigateur (localStorage) pour survivre a un
+// changement de page (une ceinture = un fichier different) : sans ca, tout ce
+// qui a ete fait sur une ceinture visitee avant celle-ci serait perdu au moment
+// du PDF final. Repli silencieux sur une seance vide si localStorage est
+// indisponible (navigation privee, restrictions navigateur...).
+function chargerSession(){
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+function sauverSession(){
+  try { localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionLog)); } catch(e) {}
+}
+function chargerNomEleve(){
+  const injecte = "";
+  if(injecte) return injecte; // fiche personnalisee : le nom est deja connu, prioritaire
+  try { return localStorage.getItem(NAME_STORAGE_KEY) || ""; } catch(e) { return ""; }
+}
+function sauverNomEleve(){
+  try { localStorage.setItem(NAME_STORAGE_KEY, studentName); } catch(e) {}
+}
+function viderSession(){
+  try { localStorage.removeItem(SESSION_STORAGE_KEY); localStorage.removeItem(NAME_STORAGE_KEY); } catch(e) {}
+  sessionLog = [];
+}
+
+let sessionLog = chargerSession(); // {belt, carte, ok, results}
+let studentName = chargerNomEleve();
 
 function updateSessionScore(){
   const total = sessionLog.length;
@@ -486,7 +516,9 @@ function verifierReponse(){
       }
     });
     hasAttemptedCurrent = true;
-    sessionLog.push({carte: cardIdx+1, ok: allOk, results: results});
+    const beltLabel = card.belt_name || PAGE_TITLE;
+    sessionLog.push({belt: beltLabel, carte: cardIdx+1, ok: allOk, results: results});
+    sauverSession();
     updateSessionScore();
     refreshCorrectionButton();
   }
@@ -523,13 +555,14 @@ function terminerSeance(){
     const saisie = prompt("Quel est ton prénom ?");
     if(!saisie){ alert("Le prénom est nécessaire pour enregistrer la séance."); return; }
     studentName = saisie.trim();
+    sauverNomEleve();
   }
 
   const total = sessionLog.length;
   const ok = sessionLog.filter(e => e.ok).length;
   const dateStr = new Date().toLocaleDateString('fr-FR');
   const heureStr = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
-  const titreComplet = `${studentName} — ${PAGE_TITLE}`;
+  const titreComplet = `${studentName} — ${dateStr}`;
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -538,14 +571,14 @@ function terminerSeance(){
   doc.setFontSize(11);
   doc.text(`Date : ${dateStr} à ${heureStr}`, 14, 28);
   doc.text(`Score de la séance : ${ok} / ${total}`, 14, 36);
-  doc.text("Détail :", 14, 46);
+  doc.text("Détail (toutes ceintures travaillées pendant la séance) :", 14, 46);
   let y = 54;
   sessionLog.forEach((e, i) => {
     if(y > 280){ doc.addPage(); y = 20; }
     const detail = e.results
       ? e.results.map((r, k) => `${LETTRES[k] || (k+1)}:${r ? 'juste' : 'à revoir'}`).join('  ')
       : (e.ok ? 'juste' : 'à revoir');
-    doc.text(`${i+1}. Carte ${e.carte} — ${detail}`, 18, y);
+    doc.text(`${i+1}. ${e.belt} — Carte ${e.carte} — ${detail}`, 18, y);
     y += 7;
   });
 
@@ -554,9 +587,9 @@ function terminerSeance(){
   doc.save(fname);
 
   if(EMAIL_ENABLED){
-    const sujet = encodeURIComponent(`Séance calcul posé — ${titreComplet} — ${dateStr}`);
+    const sujet = encodeURIComponent(`Séance calcul posé — ${titreComplet}`);
     const corps = encodeURIComponent(
-      `Bonjour,\n\nVoici le résumé de séance de ${studentName} — ${PAGE_TITLE} — du ${dateStr} à ${heureStr}.\n` +
+      `Bonjour,\n\nVoici le résumé de séance de ${studentName} du ${dateStr} à ${heureStr}.\n` +
       `Score : ${ok}/${total}.\n\nLe fichier "${fname}" vient d'être téléchargé — merci de le joindre à cet e-mail avant de l'envoyer.\n`
     );
     const mailto = `mailto:${TEACHER_EMAIL}?subject=${sujet}&body=${corps}`;
@@ -564,6 +597,10 @@ function terminerSeance(){
   } else {
     alert(`Séance enregistrée ! Le fichier "${fname}" vient d'être téléchargé.`);
   }
+
+  viderSession();
+  studentName = "";
+  updateSessionScore();
 }
 
 function toggleCorrection(){
@@ -616,6 +653,7 @@ document.addEventListener('keydown', (e)=>{
 });
 
 render();
+updateSessionScore();
 </script>
 </body>
 </html>
