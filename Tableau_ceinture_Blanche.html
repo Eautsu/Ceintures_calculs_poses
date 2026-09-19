@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Ceinture BLANCHE — Calcul posé</title>
+<title>Ceinture BLANCHE</title>
 <style>
   :root {
     --belt-color: #8C8C8C;
@@ -24,6 +24,20 @@
     border-radius: 24px; padding: 8px 22px; cursor: pointer;
   }
   #progress-btn:hover { background: #eee; }
+  #session-score { font-size: 1.1rem; font-weight: bold; color: #333; }
+  #btn-fin-seance {
+    font-size: 1rem; font-weight: bold; background: #2F3B52; color: white; border: none;
+    border-radius: 20px; padding: 8px 18px; cursor: pointer;
+  }
+  #btn-fin-seance:hover { filter: brightness(1.2); }
+  #btn-mode {
+    font-size: 1rem; font-weight: bold; background: white; color: #333;
+    border: 2px solid #999; border-radius: 20px; padding: 7px 16px; cursor: pointer;
+  }
+  #btn-mode.teacher { background: #2E8B57; color: white; border-color: #2E8B57; }
+  #btn-correction:disabled {
+    background: #ccc; color: #777; cursor: not-allowed; filter: none;
+  }
   main {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     padding: 20px; text-align: center; position: relative;
@@ -36,38 +50,33 @@
   #palier-label { font-size: 1.5rem; color: var(--belt-color); font-weight: bold; margin-bottom: 44px; text-transform: uppercase; }
   #calc-area { font-size: 4rem; font-weight: bold; color: #1a1a1a; margin-bottom: 56px; }
   .rappel-tag { font-size: 1.4rem; color: #0B5FA5; font-style: italic; display: block; margin-top: 14px; }
-
-  .grid-wrap { display: inline-flex; gap: 45px; flex-wrap: wrap; justify-content: center; }
-  table.calc-grid { border-collapse: collapse; }
-  table.calc-grid td {
-    width: 4.8rem; height: 4.8rem; border: 2px solid #d5d5d5; text-align: center;
-    font-size: 2.7rem; font-weight: bold; position: relative;
+  .belt-origin-tag {
+    display: inline-block; font-size: 0.9rem; font-weight: bold; color: white;
+    border-radius: 20px; padding: 3px 14px; margin-left: 14px; vertical-align: middle;
+    text-transform: none;
   }
-  table.calc-grid td.op-cell { border: none; font-size: 2.7rem; }
-  table.calc-grid tr.result-row td { border-top: 4px solid #1a1a1a; }
-  .carry-circle {
-    width: 2.6rem; height: 2.6rem; border-radius: 50%; border: 3px solid #999;
-    margin: 0 auto; display: flex; align-items: center; justify-content: center;
-    font-size: 1.4rem; background: white;
-  }
-  .carry-circle.filled { color: white; font-weight: bold; }
-  .cassage-box {
-    border: 2px dashed #b7b7b7; border-radius: 6px; width: 4.5rem; height: 2.7rem;
-    margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
-  }
-  .struck { text-decoration: line-through; color: #8a8a8a !important; }
 
   #btn-correction {
     font-size: 1.5rem; padding: 14px 32px; border-radius: 10px; border: none;
     background: var(--belt-color); color: white; cursor: pointer; font-weight: bold;
   }
   #btn-correction:hover { filter: brightness(0.92); }
-  #btn-autre-face {
-    font-size: 1.5rem; padding: 14px 32px; border-radius: 10px; border: 2px solid var(--belt-color);
-    background: white; color: var(--belt-color); cursor: pointer; font-weight: bold;
+  #btn-verifier {
+    font-size: 1.5rem; padding: 14px 32px; border-radius: 10px; border: none;
+    background: #2E8B57; color: white; cursor: pointer; font-weight: bold;
   }
-  #btn-autre-face:hover { background: var(--belt-color-pale); }
-
+  #btn-verifier:hover { filter: brightness(0.92); }
+  #feedback-msg {
+    font-size: 1.4rem; font-weight: bold; min-height: 2.2rem; margin-bottom: 8px;
+  }
+  #feedback-msg.ok { color: #2E8B57; }
+  #feedback-msg.ko { color: #C0392B; }
+  input.digit-input, input.line-input {
+    font-family: inherit; font-weight: bold; text-align: center; border-radius: 6px;
+    border: 2px solid #999;
+  }
+  input.digit-input.correct, input.line-input.correct, input.carry-input.correct, input.cassage-input.correct { background: #DFF3E1; border-color: #2E8B57; }
+  input.digit-input.incorrect, input.line-input.incorrect, input.carry-input.incorrect, input.cassage-input.incorrect { background: #FBE0DE; border-color: #C0392B; }
 
   nav.arrows { display: flex; justify-content: space-between; align-items: center; padding: 14px 30px; }
   nav.arrows button {
@@ -91,22 +100,70 @@
   #picker-grid button.current { background: var(--belt-color); color: white; }
   #picker-close { background: #8a8a8a; color: white; border: none; border-radius: 8px; padding: 10px 22px; font-size: 1rem; cursor: pointer; }
   #picker-close:hover { background: #767676; }
+  
+  .grid-wrap { display: inline-flex; gap: 45px; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+  .item-block { display: flex; flex-direction: column; align-items: center; }
+  .item-label {
+    font-size: 1rem; font-weight: bold; color: #999; margin-bottom: 6px;
+    width: 1.8rem; height: 1.8rem; border-radius: 50%; border: 2px solid #ccc;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .item-label.correct { color: #2E8B57; border-color: #2E8B57; background: #DFF3E1; }
+  .item-label.incorrect { color: #C0392B; border-color: #C0392B; background: #FBE0DE; }
+  table.calc-grid { border-collapse: collapse; }
+  table.calc-grid td {
+    width: 4.8rem; height: 4.8rem; border: 2px solid #d5d5d5; text-align: center;
+    font-size: 2.7rem; font-weight: bold; position: relative;
+  }
+  table.calc-grid td.op-cell { border: none; font-size: 2.7rem; }
+  table.calc-grid tr.result-row td { border-top: 4px solid #1a1a1a; }
+  .carry-circle {
+    width: 2.6rem; height: 2.6rem; border-radius: 50%; border: 3px solid #999;
+    margin: 0 auto; display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; background: white;
+  }
+  .carry-circle.filled { color: white; font-weight: bold; }
+  .cassage-box {
+    border: 2px dashed #b7b7b7; border-radius: 6px; width: 4.5rem; height: 2.7rem;
+    margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+  }
+  .struck { text-decoration: line-through; color: #8a8a8a !important; }
+  input.digit-input {
+    width: 4rem; height: 4rem; font-size: 2.4rem; text-align: center;
+  }
+  input.carry-input {
+    width: 2.6rem; height: 2.6rem; font-size: 1.4rem; text-align: center; border-radius: 50%;
+  }
+  input.cassage-input {
+    width: 4.5rem; height: 2.7rem; font-size: 1.5rem; text-align: center; border-style: dashed;
+  }
+  input.line-input {
+    font-size: 3.5rem; width: 6rem; height: 4.5rem; margin-left: 12px;
+  }
+
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 <header>
   <div style="display:flex;align-items:center;">
     <a class="home" href="index.html" title="Retour à l'index">🏠</a>
-    <h1>Ceinture BLANCHE — Calcul posé</h1>
+    <h1>Ceinture BLANCHE</h1>
   </div>
-  <button id="progress-btn">Carte 1 / 30</button>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <span id="session-score">Séance : 0/0</span>
+    <button id="btn-fin-seance">Terminer la séance</button>
+    <button id="btn-mode" title="Déverrouiller la correction libre">👤 Élève</button>
+    <button id="progress-btn">Carte 1 / 30</button>
+  </div>
 </header>
 <main>
   <div id="carte-indicator"></div>
   <div id="palier-label"></div>
   <div id="calc-area"></div>
+  <div id="feedback-msg"></div>
   <div style="display:flex; gap:28px; margin-top:8px;">
-    <button id="btn-autre-face">Voir le calcul B →</button>
+    <button id="btn-verifier">Vérifier ma réponse</button>
     <button id="btn-correction">Voir la correction (espace)</button>
   </div>
 </main>
@@ -129,11 +186,12 @@
 </div>
 
 <script>
-const CARDS = [{"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [91, 2], "op": "+"}, {"terms": [13, 5], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [41, 4], "op": "+"}, {"terms": [27, 2], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [21, 7], "op": "+"}, {"terms": [14, 1], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [21, 4], "op": "+"}, {"terms": [87, 1], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [81, 4], "op": "+"}, {"terms": [63, 4], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [10, 3], "op": "+"}, {"terms": [53, 5], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [53, 2], "op": "+"}, {"terms": [22, 6], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [54, 5], "op": "+"}, {"terms": [80, 5], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [90, 6], "op": "+"}, {"terms": [83, 4], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [18, 1], "op": "+"}, {"terms": [94, 4], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [47, 2], "op": "+"}, {"terms": [30, 6], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [55, 4], "op": "+"}, {"terms": [30, 8], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [61, 5], "op": "+"}, {"terms": [82, 6], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [60, 8], "op": "+"}, {"terms": [73, 2], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [16, 2], "op": "+"}, {"terms": [86, 2], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [87, 12], "op": "+"}, {"terms": [32, 17], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [23, 25], "op": "+"}, {"terms": [22, 30], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [31, 47], "op": "+"}, {"terms": [31, 26], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [20, 50], "op": "+"}, {"terms": [10, 23], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [12, 53], "op": "+"}, {"terms": [21, 14], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [21, 36], "op": "+"}, {"terms": [32, 34], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [17, 22], "op": "+"}, {"terms": [13, 13], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [74, 24], "op": "+"}, {"terms": [60, 29], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [41, 10], "op": "+"}, {"terms": [63, 35], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [23, 11], "op": "+"}, {"terms": [24, 52], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [50, 43], "op": "+"}, {"terms": [41, 35], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [40, 15], "op": "+"}, {"terms": [21, 44], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [50, 38], "op": "+"}, {"terms": [11, 36], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [34, 35], "op": "+"}, {"terms": [17, 42], "op": "+"}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "guided": true, "calcs": [{"terms": [36, 40], "op": "+"}, {"terms": [16, 33], "op": "+"}]}];
+// ============================================================
+// Contenu specifique a la discipline (fourni par l'appelant) :
+// doit definir renderCard(items, showCorrection) -> HTML string, et checkCard(items) -> tableau de booleens
+// ============================================================
+
 const OP_SYMBOL = {"+":"+", "-":"\u2013", "x":"\u00d7"};
-let cardIdx = 0;
-let subIdx = 0;          // 0 = calcul A, 1 = calcul B
-let showingCorrection = false;
 
 function computeResult(terms, op){
   if(op === "+") return terms.reduce((a,b)=>a+b,0);
@@ -176,7 +234,7 @@ function colColor(colI, ncols){
   return CF[Math.min(fromRight, CF.length-1)];
 }
 
-function renderGrid(terms, op, showResult){
+function renderGrid(terms, op, showResult, prefix){
   const digitStrs = terms.map(t=>String(t));
   const resultStr = String(computeResult(terms, op));
   const ncols = Math.max(Math.max(...digitStrs.map(s=>s.length)), resultStr.length);
@@ -197,13 +255,21 @@ function renderGrid(terms, op, showResult){
       const place = ncols-1-colI;
       let cell = '';
       if((op==="+"||op==="x") && colI < ncols-1){
-        const filled = showResult && carryIn[place] > 0;
         const col = colColor(colI, ncols);
-        cell = `<div class="carry-circle ${filled?'filled':''}" style="border-color:${col};${filled?`background:${col};`:''}">${filled?carryIn[place]:''}</div>`;
+        if(showResult){
+          const filled = carryIn[place] > 0;
+          cell = `<div class="carry-circle ${filled?'filled':''}" style="border-color:${col};${filled?`background:${col};`:''}">${filled?carryIn[place]:''}</div>`;
+        } else {
+          cell = `<input type="text" inputmode="numeric" maxlength="1" class="carry-input" id="carry-input-${prefix}-${colI}" style="border-color:${col};color:${col};">`;
+        }
       } else if(op === "-"){
         const col = colColor(colI, ncols);
-        const val = (showResult && borrowChanged[place]) ? borrowEff[place] : '';
-        cell = `<div class="cassage-box" style="color:${col};border-color:${col};">${val}</div>`;
+        if(showResult){
+          const val = borrowChanged[place] ? borrowEff[place] : '';
+          cell = `<div class="cassage-box" style="color:${col};border-color:${col};">${val}</div>`;
+        } else {
+          cell = `<input type="text" inputmode="numeric" maxlength="2" class="cassage-input" id="cassage-input-${prefix}-${colI}" style="border-color:${col};color:${col};">`;
+        }
       }
       html += `<td class="op-cell">${cell}</td>`;
     }
@@ -235,8 +301,15 @@ function renderGrid(terms, op, showResult){
   const pad = ncols - resultStr.length;
   for(let colI=0; colI<ncols; colI++){
     let content = '';
-    if(showResult && colI >= pad){
-      content = `<span style="color:${colColor(colI,ncols)}">${resultStr[colI-pad]}</span>`;
+    if(showResult){
+      if(colI >= pad){
+        content = `<span style="color:${colColor(colI,ncols)}">${resultStr[colI-pad]}</span>`;
+      }
+    } else {
+      // mode pratique : une case de saisie par colonne, meme vide au-dela du
+      // premier chiffre attendu (l'eleve peut avoir besoin d'une colonne de plus
+      // ou de moins selon sa propre reponse, mais on borne a ncols par simplicite)
+      content = `<input type="text" inputmode="numeric" maxlength="1" class="digit-input" id="digit-input-${prefix}-${colI}" style="color:${colColor(colI,ncols)};border-color:${colColor(colI,ncols)};">`;
     }
     html += `<td>${content}</td>`;
   }
@@ -245,43 +318,265 @@ function renderGrid(terms, op, showResult){
   return html;
 }
 
-function renderLine(terms, op){
-  return terms.map(t=>String(t)).join(` ${OP_SYMBOL[op]} `) + ' =';
+function renderLine(terms, op, showResult, prefix){
+  const expr = terms.map(t=>String(t)).join(` ${OP_SYMBOL[op]} `) + ' =';
+  if(showResult){
+    return `${expr} ${computeResult(terms, op)}`;
+  }
+  return `${expr} <input type="text" inputmode="numeric" class="line-input" id="line-answer-input-${prefix}" size="5">`;
+}
+
+function renderOneItem(item, showCorrection, prefix){
+  if(!item.guided){
+    return renderLine(item.terms, item.op, showCorrection, prefix);
+  }
+  return renderGrid(item.terms, item.op, showCorrection, prefix);
+}
+
+function renderCard(items, showCorrection){
+  // affiche TOUS les calculs de la carte en meme temps, cote a cote (comme
+  // sur la carte papier), plutot que de naviguer entre eux un par un.
+  const lettres = ['A','B','C','D','E','F'];
+  const parts = items.map((item, i) => {
+    const label = items.length > 1 ? `<div class="item-label" id="item-label-${i}">${lettres[i] || (i+1)}</div>` : '';
+    return `<div class="item-block">${label}${renderOneItem(item, showCorrection, i)}</div>`;
+  });
+  return '<div class="grid-wrap">' + parts.join('') + '</div>';
+}
+
+function checkOneItem(item, prefix){
+  const resultStr = String(computeResult(item.terms, item.op));
+  if(!item.guided){
+    const input = document.getElementById(`line-answer-input-${prefix}`);
+    if(!input) return false;
+    const ok = input.value.trim() === resultStr;
+    input.classList.remove('correct','incorrect');
+    input.classList.add(ok ? 'correct' : 'incorrect');
+    return ok;
+  }
+  const digitStrs = item.terms.map(t=>String(t));
+  const ncols = Math.max(Math.max(...digitStrs.map(s=>s.length)), resultStr.length);
+  const pad = ncols - resultStr.length;
+  let allOk = true;
+
+  // 1) chiffres du resultat
+  for(let colI=0; colI<ncols; colI++){
+    const input = document.getElementById(`digit-input-${prefix}-${colI}`);
+    if(!input) continue;
+    const expected = colI >= pad ? resultStr[colI-pad] : '';
+    const got = input.value.trim();
+    const ok = (expected === '') ? (got === '' || got === '0') : (got === expected);
+    input.classList.remove('correct','incorrect');
+    input.classList.add(ok ? 'correct' : 'incorrect');
+    if(!ok) allOk = false;
+  }
+
+  // 2) retenues (addition, multiplication) ou cassages (soustraction)
+  if(item.op === '+' || item.op === 'x'){
+    const carryIn = item.op === '+' ? carryColumns(item.terms, ncols) : multCarryColumns(item.terms[0], item.terms[1], ncols);
+    for(let colI=0; colI<ncols-1; colI++){
+      const place = ncols-1-colI;
+      const input = document.getElementById(`carry-input-${prefix}-${colI}`);
+      if(!input) continue;
+      const expected = carryIn[place] > 0 ? String(carryIn[place]) : '';
+      const got = input.value.trim();
+      const ok = got === expected;
+      input.classList.remove('correct','incorrect');
+      input.classList.add(ok ? 'correct' : 'incorrect');
+      if(!ok) allOk = false;
+    }
+  } else if(item.op === '-'){
+    const r = borrowAdjust(item.terms[0], item.terms[1], ncols);
+    for(let colI=0; colI<ncols; colI++){
+      const place = ncols-1-colI;
+      const input = document.getElementById(`cassage-input-${prefix}-${colI}`);
+      if(!input) continue;
+      const expected = r.changed[place] ? String(r.effective[place]) : '';
+      const got = input.value.trim();
+      const ok = got === expected;
+      input.classList.remove('correct','incorrect');
+      input.classList.add(ok ? 'correct' : 'incorrect');
+      if(!ok) allOk = false;
+    }
+  }
+
+  return allOk;
+}
+
+function checkCard(items){
+  // verifie chaque calcul de la carte independamment, retourne un tableau
+  // de booleens (un par calcul) — le moteur generique en fait la synthese.
+  return items.map((item, i) => checkOneItem(item, i));
+}
+
+
+// ============================================================
+// Moteur generique (ceci ne change pas d'une discipline a l'autre)
+// ============================================================
+const CARDS = [{"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [91, 2], "op": "+", "guided": true}, {"terms": [13, 5], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [41, 4], "op": "+", "guided": true}, {"terms": [27, 2], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [21, 7], "op": "+", "guided": true}, {"terms": [14, 1], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [21, 4], "op": "+", "guided": true}, {"terms": [87, 1], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [81, 4], "op": "+", "guided": true}, {"terms": [63, 4], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [10, 3], "op": "+", "guided": true}, {"terms": [53, 5], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [53, 2], "op": "+", "guided": true}, {"terms": [22, 6], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [54, 5], "op": "+", "guided": true}, {"terms": [80, 5], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [90, 6], "op": "+", "guided": true}, {"terms": [83, 4], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [18, 1], "op": "+", "guided": true}, {"terms": [94, 4], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [47, 2], "op": "+", "guided": true}, {"terms": [30, 6], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [55, 4], "op": "+", "guided": true}, {"terms": [30, 8], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [61, 5], "op": "+", "guided": true}, {"terms": [82, 6], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [60, 8], "op": "+", "guided": true}, {"terms": [73, 2], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 1 CHIFFRE", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [16, 2], "op": "+", "guided": true}, {"terms": [86, 2], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [87, 12], "op": "+", "guided": true}, {"terms": [32, 17], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [23, 25], "op": "+", "guided": true}, {"terms": [22, 30], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [31, 47], "op": "+", "guided": true}, {"terms": [31, 26], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [20, 50], "op": "+", "guided": true}, {"terms": [10, 23], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [12, 53], "op": "+", "guided": true}, {"terms": [21, 14], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [21, 36], "op": "+", "guided": true}, {"terms": [32, 34], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [17, 22], "op": "+", "guided": true}, {"terms": [13, 13], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [74, 24], "op": "+", "guided": true}, {"terms": [60, 29], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [41, 10], "op": "+", "guided": true}, {"terms": [63, 35], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [23, 11], "op": "+", "guided": true}, {"terms": [24, 52], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [50, 43], "op": "+", "guided": true}, {"terms": [41, 35], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [40, 15], "op": "+", "guided": true}, {"terms": [21, 44], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [50, 38], "op": "+", "guided": true}, {"terms": [11, 36], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [34, 35], "op": "+", "guided": true}, {"terms": [17, 42], "op": "+", "guided": true}]}, {"recto": "ADDITION 2 CHIFFRES + 2 CHIFFRES", "verso": "ADDITION SANS RETENUE", "rappel": false, "items": [{"terms": [36, 40], "op": "+", "guided": true}, {"terms": [16, 33], "op": "+", "guided": true}]}];
+const ITEM_LABEL = "CALCUL";
+const PAGE_TITLE = "Ceinture BLANCHE";
+const TEACHER_EMAIL = "euryale_tsipora@protonmail.me";
+const TEACHER_PIN = "0616";
+const EMAIL_ENABLED = false; // desactive temporairement l'ouverture de la messagerie en fin de seance ; le PDF continue d'etre genere et telecharge normalement
+let cardIdx = 0;
+let showingCorrection = false;
+let teacherMode = false;
+let hasAttemptedCurrent = false;
+let sessionLog = []; // {carte, ok, results}
+let studentName = ""; // deja rempli si fiche personnalisee, vide sinon
+
+function updateSessionScore(){
+  const total = sessionLog.length;
+  const ok = sessionLog.filter(e => e.ok).length;
+  document.getElementById('session-score').textContent = `Séance : ${ok}/${total}`;
 }
 
 function render(){
   showingCorrection = false;
+  hasAttemptedCurrent = false;
   updateCalcArea();
   document.getElementById('progress-btn').textContent = `Carte ${cardIdx+1} / ${CARDS.length}`;
 }
+
 function updateCalcArea(){
   const card = CARDS[cardIdx];
-  const calc = card.calcs[subIdx];
-  const lettre = subIdx === 0 ? 'A' : 'B';
+  const beltTag = card.belt_name
+    ? `<span class="belt-origin-tag" style="background:${card.belt_color};">${card.belt_name}</span>`
+    : '';
   document.getElementById('carte-indicator').innerHTML =
-    `CARTE ${cardIdx+1} — CALCUL ${lettre}` + (card.rappel ? '<span class="rappel-tag">(rappel)</span>' : '');
+    `CARTE ${cardIdx+1}` + beltTag + (card.rappel ? '<span class="rappel-tag">(rappel)</span>' : '');
   document.getElementById('palier-label').innerHTML = showingCorrection ? card.verso : card.recto;
-  const area = document.getElementById('calc-area');
-  if(!showingCorrection && !card.guided){
-    area.innerHTML = renderLine(calc.terms, calc.op);
-  } else {
-    area.innerHTML = '<div class="grid-wrap">' + renderGrid(calc.terms, calc.op, showingCorrection) + '</div>';
-  }
-  document.getElementById('btn-correction').textContent =
-    showingCorrection ? 'Retour à l\'énoncé (espace)' : 'Voir la correction (espace)';
-  document.getElementById('btn-autre-face').textContent =
-    subIdx === 0 ? 'Voir le calcul B →' : '← Voir le calcul A';
+  document.getElementById('calc-area').innerHTML = renderCard(card.items, showingCorrection);
+  document.getElementById('feedback-msg').textContent = '';
+  document.getElementById('feedback-msg').className = '';
+  document.getElementById('btn-verifier').style.display = showingCorrection ? 'none' : '';
+  refreshCorrectionButton();
 }
-function toggleCorrection(){ showingCorrection = !showingCorrection; updateCalcArea(); }
-function toggleFace(){ subIdx = subIdx === 0 ? 1 : 0; showingCorrection = false; updateCalcArea(); }
+
+function refreshCorrectionButton(){
+  const btnCorrection = document.getElementById('btn-correction');
+  const locked = !teacherMode && !hasAttemptedCurrent && !showingCorrection;
+  btnCorrection.disabled = locked;
+  btnCorrection.title = locked ? "Vérifie d'abord ta réponse pour débloquer la correction" : "";
+  btnCorrection.textContent = locked
+    ? '🔒 Vérifie ta réponse d\'abord'
+    : (showingCorrection ? 'Retour à l\'énoncé (espace)' : 'Voir la correction (espace)');
+}
+
+function verifierReponse(){
+  const card = CARDS[cardIdx];
+  if(typeof checkCard === 'function'){
+    const results = checkCard(card.items); // tableau de booleens, un par calcul de la carte
+    const allOk = results.every(r => r);
+    const msg = document.getElementById('feedback-msg');
+    if(allOk){
+      msg.textContent = 'Bravo, les deux calculs sont justes !';
+    } else if(results.some(r => r)){
+      msg.textContent = 'Un calcul est juste, l\'autre pas encore — corrige et réessaie.';
+    } else {
+      msg.textContent = 'Pas encore juste — corrige et réessaie.';
+    }
+    msg.className = allOk ? 'ok' : 'ko';
+    results.forEach((ok, i) => {
+      const label = document.getElementById(`item-label-${i}`);
+      if(label){
+        label.classList.remove('correct', 'incorrect');
+        label.classList.add(ok ? 'correct' : 'incorrect');
+      }
+    });
+    hasAttemptedCurrent = true;
+    sessionLog.push({carte: cardIdx+1, ok: allOk, results: results});
+    updateSessionScore();
+    refreshCorrectionButton();
+  }
+}
+
+function toggleTeacherMode(){
+  if(teacherMode){
+    teacherMode = false;
+    document.getElementById('btn-mode').textContent = '👤 Élève';
+    document.getElementById('btn-mode').classList.remove('teacher');
+  } else {
+    const code = prompt("Code enseignant :");
+    if(code === null) return;
+    if(code === TEACHER_PIN){
+      teacherMode = true;
+      document.getElementById('btn-mode').textContent = '🔓 Enseignant';
+      document.getElementById('btn-mode').classList.add('teacher');
+    } else {
+      alert("Code incorrect.");
+      return;
+    }
+  }
+  refreshCorrectionButton();
+}
+
+const LETTRES = ['A','B','C','D','E','F'];
+
+function terminerSeance(){
+  if(sessionLog.length === 0){
+    alert("Aucune vérification n'a encore été faite pendant cette séance.");
+    return;
+  }
+  if(!studentName){
+    const saisie = prompt("Quel est ton prénom ?");
+    if(!saisie){ alert("Le prénom est nécessaire pour enregistrer la séance."); return; }
+    studentName = saisie.trim();
+  }
+
+  const total = sessionLog.length;
+  const ok = sessionLog.filter(e => e.ok).length;
+  const dateStr = new Date().toLocaleDateString('fr-FR');
+  const heureStr = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+  const titreComplet = `${studentName} — ${PAGE_TITLE}`;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text(`Séance de calcul posé — ${titreComplet}`, 14, 18);
+  doc.setFontSize(11);
+  doc.text(`Date : ${dateStr} à ${heureStr}`, 14, 28);
+  doc.text(`Score de la séance : ${ok} / ${total}`, 14, 36);
+  doc.text("Détail :", 14, 46);
+  let y = 54;
+  sessionLog.forEach((e, i) => {
+    if(y > 280){ doc.addPage(); y = 20; }
+    const detail = e.results
+      ? e.results.map((r, k) => `${LETTRES[k] || (k+1)}:${r ? 'juste' : 'à revoir'}`).join('  ')
+      : (e.ok ? 'juste' : 'à revoir');
+    doc.text(`${i+1}. Carte ${e.carte} — ${detail}`, 18, y);
+    y += 7;
+  });
+
+  const slug = studentName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,'_');
+  const fname = `seance_${slug}_${dateStr.replace(/\//g,'-')}.pdf`;
+  doc.save(fname);
+
+  if(EMAIL_ENABLED){
+    const sujet = encodeURIComponent(`Séance calcul posé — ${titreComplet} — ${dateStr}`);
+    const corps = encodeURIComponent(
+      `Bonjour,\n\nVoici le résumé de séance de ${studentName} — ${PAGE_TITLE} — du ${dateStr} à ${heureStr}.\n` +
+      `Score : ${ok}/${total}.\n\nLe fichier "${fname}" vient d'être téléchargé — merci de le joindre à cet e-mail avant de l'envoyer.\n`
+    );
+    const mailto = `mailto:${TEACHER_EMAIL}?subject=${sujet}&body=${corps}`;
+    window.location.href = mailto;
+  } else {
+    alert(`Séance enregistrée ! Le fichier "${fname}" vient d'être téléchargé.`);
+  }
+}
+
+function toggleCorrection(){
+  if(!teacherMode && !hasAttemptedCurrent && !showingCorrection) return; // verrouille tant que non tente
+  showingCorrection = !showingCorrection;
+  updateCalcArea();
+}
 function go(delta){
   cardIdx = (cardIdx + delta + CARDS.length) % CARDS.length;
-  subIdx = 0;
   render();
 }
 function goTo(n){
   cardIdx = Math.max(0, Math.min(CARDS.length-1, n-1));
-  subIdx = 0;
   render();
   closePicker();
 }
@@ -310,7 +605,9 @@ document.getElementById('picker-go').onclick = ()=>{
 document.getElementById('prev').onclick = ()=>go(-1);
 document.getElementById('next').onclick = ()=>go(1);
 document.getElementById('btn-correction').onclick = toggleCorrection;
-document.getElementById('btn-autre-face').onclick = toggleFace;
+document.getElementById('btn-verifier').onclick = verifierReponse;
+document.getElementById('btn-fin-seance').onclick = terminerSeance;
+document.getElementById('btn-mode').onclick = toggleTeacherMode;
 document.addEventListener('keydown', (e)=>{
   if(document.getElementById('overlay').classList.contains('show')) return;
   if(e.key === 'ArrowRight') go(1);
