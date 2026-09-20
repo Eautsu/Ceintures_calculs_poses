@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Ceinture VERTE</title>
+<style>
+  :root {
+    --belt-color: #4C9A5A;
+    --belt-color-pale: color-mix(in srgb, var(--belt-color) 16%, white);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+    background: #f4f4f4; height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    background: var(--belt-color-pale); padding: 14px 24px; display: flex;
+    align-items: center; justify-content: space-between; border-bottom: 3px solid var(--belt-color);
+  }
+  header h1 { margin: 0; font-size: 1.8rem; color: #1a1a1a; }
+  header a.home { text-decoration: none; color: #555; font-size: 1.3rem; margin-right: 14px; }
+  #progress-btn {
+    font-size: 1.5rem; font-weight: bold; background: white; border: 2px solid #1a1a1a;
+    border-radius: 24px; padding: 8px 22px; cursor: pointer;
+  }
+  #progress-btn:hover { background: #eee; }
+  #session-score { font-size: 1.1rem; font-weight: bold; color: #333; }
+  #btn-fin-seance {
+    font-size: 1rem; font-weight: bold; background: #2F3B52; color: white; border: none;
+    border-radius: 20px; padding: 8px 18px; cursor: pointer;
+  }
+  #btn-fin-seance:hover { filter: brightness(1.2); }
+  #btn-mode {
+    font-size: 1rem; font-weight: bold; background: white; color: #333;
+    border: 2px solid #999; border-radius: 20px; padding: 7px 16px; cursor: pointer;
+  }
+  #btn-mode.teacher { background: #2E8B57; color: white; border-color: #2E8B57; }
+  #btn-correction:disabled {
+    background: #ccc; color: #777; cursor: not-allowed; filter: none;
+  }
+  main {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px; text-align: center; position: relative;
+  }
+  #carte-indicator {
+    font-size: 2.2rem; font-weight: 900; color: var(--belt-color);
+    background: var(--belt-color-pale); border: 3px solid var(--belt-color);
+    border-radius: 14px; padding: 14px 36px; margin-bottom: 40px; letter-spacing: 0.03em;
+  }
+  #palier-label { font-size: 1.5rem; color: var(--belt-color); font-weight: bold; margin-bottom: 44px; text-transform: uppercase; }
+  #calc-area { font-size: 4rem; font-weight: bold; color: #1a1a1a; margin-bottom: 56px; }
+  .rappel-tag { font-size: 1.4rem; color: #0B5FA5; font-style: italic; display: block; margin-top: 14px; }
+  .belt-origin-tag {
+    display: inline-block; font-size: 0.9rem; font-weight: bold; color: white;
+    border-radius: 20px; padding: 3px 14px; margin-left: 14px; vertical-align: middle;
+    text-transform: none;
+  }
+
+  #btn-correction {
+    font-size: 1.5rem; padding: 14px 32px; border-radius: 10px; border: none;
+    background: var(--belt-color); color: white; cursor: pointer; font-weight: bold;
+  }
+  #btn-correction:hover { filter: brightness(0.92); }
+  #btn-verifier {
+    font-size: 1.5rem; padding: 14px 32px; border-radius: 10px; border: none;
+    background: #2E8B57; color: white; cursor: pointer; font-weight: bold;
+  }
+  #btn-verifier:hover { filter: brightness(0.92); }
+  #feedback-msg {
+    font-size: 1.4rem; font-weight: bold; min-height: 2.2rem; margin-bottom: 8px;
+  }
+  #feedback-msg.ok { color: #2E8B57; }
+  #feedback-msg.ko { color: #C0392B; }
+  input.digit-input, input.line-input {
+    font-family: inherit; font-weight: bold; text-align: center; border-radius: 6px;
+    border: 2px solid #999;
+  }
+  input.digit-input.correct, input.line-input.correct, input.carry-input.correct, input.cassage-input.correct { background: #DFF3E1; border-color: #2E8B57; }
+  input.digit-input.incorrect, input.line-input.incorrect, input.carry-input.incorrect, input.cassage-input.incorrect { background: #FBE0DE; border-color: #C0392B; }
+
+  nav.arrows { display: flex; justify-content: space-between; align-items: center; padding: 14px 30px; }
+  nav.arrows button {
+    width: 60px; height: 60px; border-radius: 50%; border: 2px solid #1a1a1a; background: white;
+    font-size: 1.8rem; cursor: pointer;
+  }
+  nav.arrows button:hover { background: #eee; }
+  nav.arrows span { font-size: 1.15rem; color: #555; }
+
+  #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 10; }
+  #overlay.show { display: flex; }
+  #picker { background: white; border-radius: 12px; padding: 28px 32px; max-width: 90vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
+  #picker h2 { margin: 0 0 18px 0; font-size: 1.5rem; color: var(--belt-color); font-weight: bold; }
+  #picker-jump { display: flex; gap: 10px; margin-bottom: 20px; }
+  #picker-input { flex: 1; min-width: 260px; padding: 10px 14px; font-size: 1rem; border: 2px solid var(--belt-color); border-radius: 8px; }
+  #picker-go { padding: 10px 22px; font-size: 1rem; font-weight: bold; cursor: pointer; background: var(--belt-color); color: white; border: none; border-radius: 8px; }
+  #picker-go:hover { filter: brightness(0.92); }
+  #picker-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; margin-bottom: 22px; }
+  #picker-grid button { padding: 10px 0; border: 2px solid var(--belt-color); border-radius: 10px; background: white; color: var(--belt-color); font-weight: bold; font-size: 1rem; cursor: pointer; }
+  #picker-grid button:hover { background: var(--belt-color-pale); }
+  #picker-grid button.current { background: var(--belt-color); color: white; }
+  #picker-close { background: #8a8a8a; color: white; border: none; border-radius: 8px; padding: 10px 22px; font-size: 1rem; cursor: pointer; }
+  #picker-close:hover { background: #767676; }
+  
+  .grid-wrap { display: inline-flex; gap: 45px; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+  .item-block { display: flex; flex-direction: column; align-items: center; }
+  .item-label {
+    font-size: 1rem; font-weight: bold; color: #999; margin-bottom: 6px;
+    width: 1.8rem; height: 1.8rem; border-radius: 50%; border: 2px solid #ccc;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .item-label.correct { color: #2E8B57; border-color: #2E8B57; background: #DFF3E1; }
+  .item-label.incorrect { color: #C0392B; border-color: #C0392B; background: #FBE0DE; }
+  .item-label-vide { width: 1.8rem; height: 1.8rem; }
+  table.calc-grid { border-collapse: collapse; }
+  table.calc-grid td {
+    width: 4.8rem; height: 4.8rem; border: 2px solid #d5d5d5; text-align: center;
+    font-size: 2.7rem; font-weight: bold; position: relative;
+  }
+  table.calc-grid td.op-cell { border: none; font-size: 2.7rem; }
+  table.calc-grid tr.result-row td { border-top: 4px solid #1a1a1a; }
+  .carry-circle {
+    width: 2.6rem; height: 2.6rem; border-radius: 50%; border: 3px solid #999;
+    margin: 0 auto; display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; background: white;
+  }
+  .carry-circle.filled { color: white; font-weight: bold; }
+  .cassage-box {
+    border: 2px dashed #b7b7b7; border-radius: 6px; width: 4.5rem; height: 2.7rem;
+    margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+  }
+  .struck { text-decoration: line-through; color: #8a8a8a !important; }
+  .struck-correct { text-decoration: line-through; color: #2E8B57 !important; font-weight: bold; }
+  .struck-incorrect { text-decoration: line-through; color: #C0392B !important; font-weight: bold; }
+  input.digit-input {
+    width: 4rem; height: 4rem; font-size: 2.4rem; text-align: center;
+  }
+  input.carry-input {
+    width: 2.6rem; height: 2.6rem; font-size: 1.4rem; text-align: center; border-radius: 50%;
+  }
+  input.cassage-input {
+    width: 4.5rem; height: 2.7rem; font-size: 1.5rem; text-align: center; border-style: dashed;
+  }
+  input.line-input {
+    font-size: 3.5rem; width: 14rem; height: 4.5rem; margin-left: 4px; letter-spacing: 0.03em;
+  }
+  .regle-bloc { max-width: 48rem; margin: 0 auto 30px auto; }
+  .regle-rappel {
+    font-size: 1rem; font-weight: bold; color: #555; margin: 0 0 8px 0; text-align: center;
+  }
+  .regle-detail {
+    font-size: 0.85rem; font-weight: normal; color: #777; margin: 0 0 4px 0;
+    text-align: center; line-height: 1.4;
+  }
+  .grid-wrap.stacked {
+    display: inline-grid; grid-template-columns: auto auto auto; align-items: center;
+    justify-content: center; row-gap: 22px; column-gap: 16px;
+  }
+  .grid-wrap.stacked .item-block { display: contents; }
+  .grid-wrap.stacked .item-label,
+  .grid-wrap.stacked .item-label-vide { margin-bottom: 0; }
+  .ligne-expr { text-align: right; white-space: nowrap; }
+  .ligne-saisie { text-align: left; }
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;">
+    <a class="home" href="index.html" title="Retour à l'index">🏠</a>
+    <h1>Ceinture VERTE</h1>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <span id="session-score">Séance : 0/0</span>
+    <button id="btn-fin-seance">Terminer la séance</button>
+    <button id="btn-mode" title="Déverrouiller la correction libre">👤 Élève</button>
+    <button id="progress-btn">Carte 1 / 30</button>
+  </div>
+</header>
+<main>
+  <div id="carte-indicator"></div>
+  <div id="palier-label"></div>
+  <div id="calc-area"></div>
+  <div id="feedback-msg"></div>
+  <div style="display:flex; gap:28px; margin-top:8px;">
+    <button id="btn-verifier">Vérifier ma réponse</button>
+    <button id="btn-correction">Voir la correction (espace)</button>
+  </div>
+</main>
+<nav class="arrows">
+  <button id="prev">←</button>
+  <span>Flèches ← → au clavier, ou clique sur le numéro en haut</span>
+  <button id="next">→</button>
+</nav>
+
+<div id="overlay">
+  <div id="picker">
+    <h2>Aller à la carte...</h2>
+    <div id="picker-jump">
+      <input type="number" id="picker-input" min="1" placeholder="N° de carte (1-30)">
+      <button id="picker-go">Aller</button>
+    </div>
+    <div id="picker-grid"></div>
+    <button id="picker-close">Fermer</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Contenu specifique a la discipline (fourni par l'appelant) :
+// doit definir renderCard(items, showCorrection) -> HTML string, et checkCard(items) -> tableau de booleens
+// ============================================================
+
+const OP_SYMBOL = {"+":"+", "-":"\u2013", "x":"\u00d7"};
+
+function computeResult(terms, op){
+  if(op === "+") return terms.reduce((a,b)=>a+b,0);
+  if(op === "-") return terms[0]-terms[1];
+  if(op === "x") return terms[0]*terms[1];
+}
+function carryColumns(terms, ncols){
+  let carry=0, out=[];
+  for(let c=0;c<ncols;c++){
+    out.push(carry);
+    let s = terms.reduce((a,t)=> a + Math.floor(t/10**c)%10, 0) + carry;
+    carry = Math.floor(s/10);
+  }
+  return out;
+}
+function multCarryColumns(a, m, ncols){
+  let carry=0, out=[];
+  for(let c=0;c<ncols;c++){
+    out.push(carry);
+    let da = Math.floor(a/10**c)%10;
+    let prod = da*m + carry;
+    carry = Math.floor(prod/10);
+  }
+  return out;
+}
+function borrowAdjust(top, bottom, ncols){
+  let effective=[], changed=[], borrow=0;
+  for(let c=0;c<ncols;c++){
+    let da = Math.floor(top/10**c)%10 - borrow;
+    let db = Math.floor(bottom/10**c)%10;
+    if(da < db){ da += 10; borrow = 1; } else { borrow = 0; }
+    effective.push(da);
+    changed.push(da !== Math.floor(top/10**c)%10);
+  }
+  return {effective, changed};
+}
+function colColor(colI, ncols){
+  const CF = ["#1F6FE0","#E0281F","#1FA33A","#1A1A1A"];
+  const fromRight = ncols-1-colI;
+  return CF[Math.min(fromRight, CF.length-1)];
+}
+
+function renderGrid(terms, op, showResult, prefix){
+  const digitStrs = terms.map(t=>String(t));
+  const resultStr = String(computeResult(terms, op));
+  const ncols = Math.max(Math.max(...digitStrs.map(s=>s.length)), resultStr.length);
+  const nTerms = terms.length;
+
+  let carryIn = null, borrowEff=null, borrowChanged=null;
+  if(op === "+") carryIn = carryColumns(terms, ncols);
+  else if(op === "x") carryIn = multCarryColumns(terms[0], terms[1], ncols);
+  else if(op === "-"){ const r = borrowAdjust(terms[0], terms[1], ncols); borrowEff=r.effective; borrowChanged=r.changed; }
+
+  // Toutes les lignes ont EXACTEMENT ncols+1 cellules (colonne signe fixe en position 0)
+  let html = '<table class="calc-grid">';
+  const hasExtraRow = (op === "+" || op === "-" || op === "x");
+
+  if(hasExtraRow){
+    html += '<tr><td class="op-cell"></td>';
+    for(let colI=0; colI<ncols; colI++){
+      const place = ncols-1-colI;
+      let cell = '';
+      if((op==="+"||op==="x") && colI < ncols-1){
+        const col = colColor(colI, ncols);
+        if(showResult){
+          const filled = carryIn[place] > 0;
+          cell = `<div class="carry-circle ${filled?'filled':''}" style="border-color:${col};${filled?`background:${col};`:''}">${filled?carryIn[place]:''}</div>`;
+        } else {
+          cell = `<input type="text" inputmode="numeric" maxlength="1" class="carry-input" id="carry-input-${prefix}-${colI}" style="border-color:${col};color:${col};">`;
+        }
+      } else if(op === "-"){
+        const col = colColor(colI, ncols);
+        if(showResult){
+          const val = borrowChanged[place] ? borrowEff[place] : '';
+          cell = `<div class="cassage-box" style="color:${col};border-color:${col};">${val}</div>`;
+        } else {
+          cell = `<input type="text" inputmode="numeric" maxlength="2" class="cassage-input" id="cassage-input-${prefix}-${colI}" style="border-color:${col};color:${col};">`;
+        }
+      }
+      html += `<td class="op-cell">${cell}</td>`;
+    }
+    html += '</tr>';
+  }
+
+  for(let i=0;i<nTerms;i++){
+    const signCell = (i===nTerms-1) ? `<td class="op-cell">${OP_SYMBOL[op]}</td>` : `<td class="op-cell"></td>`;
+    html += '<tr>' + signCell;
+    const s = digitStrs[i];
+    const pad = ncols - s.length;
+    for(let colI=0; colI<ncols; colI++){
+      const place = ncols-1-colI;
+      let content = '';
+      if(colI >= pad){
+        const ch = s[colI-pad];
+        if(i===0 && op==="-" && showResult && borrowChanged[place]){
+          content = `<span class="struck">${ch}</span>`;
+        } else if(i===0 && op==="-" && !showResult){
+          // pas encore barre : ca ne se decide qu'a la verification, pas a l'affichage
+          content = `<span id="topdigit-${prefix}-${colI}" style="color:${colColor(colI,ncols)}">${ch}</span>`;
+        } else {
+          content = `<span style="color:${colColor(colI,ncols)}">${ch}</span>`;
+        }
+      }
+      html += `<td>${content}</td>`;
+    }
+    html += '</tr>';
+  }
+
+  html += '<tr class="result-row"><td class="op-cell"></td>';
+  const pad = ncols - resultStr.length;
+  for(let colI=0; colI<ncols; colI++){
+    let content = '';
+    if(showResult){
+      if(colI >= pad){
+        content = `<span style="color:${colColor(colI,ncols)}">${resultStr[colI-pad]}</span>`;
+      }
+    } else {
+      // mode pratique : une case de saisie par colonne, meme vide au-dela du
+      // premier chiffre attendu (l'eleve peut avoir besoin d'une colonne de plus
+      // ou de moins selon sa propre reponse, mais on borne a ncols par simplicite)
+      content = `<input type="text" inputmode="numeric" maxlength="1" class="digit-input" id="digit-input-${prefix}-${colI}" style="color:${colColor(colI,ncols)};border-color:${colColor(colI,ncols)};">`;
+    }
+    html += `<td>${content}</td>`;
+  }
+  html += '</tr>';
+  html += '</table>';
+  return html;
+}
+
+const RAPPEL_ARDOISE = "Pose tes calculs sur ton ardoise ou sur ton cahier de brouillon avant de saisir ta réponse.";
+
+const REGLES_PRESENTATION_LIGNES = [
+  "Un chiffre par carreau — les unités sous les unités, les dizaines sous les dizaines, les centaines sous les centaines.",
+  "Le signe opératoire (+, −, ×) se place à gauche des nombres, en dehors du bloc de calcul, et occupe un carreau.",
+  "On trace un trait horizontal à la règle, un interligne sous le dernier nombre."
+];
+
+const REGLE_RETENUE = {
+  "+": "Gestion des retenues : elles s'écrivent au-dessus de la colonne immédiatement à gauche de celle qui vient d'être calculée, en plus petit. On les barre proprement une fois qu'elles ont été ajoutées.",
+  "-": "Gestion du cassage : on barre le chiffre « emprunté » dans la colonne de gauche et on écrit sa nouvelle valeur juste au-dessus.",
+  "x": "Gestion des retenues : elles s'écrivent souvent sur le côté du calcul (pour ne pas les mélanger avec les différentes lignes) et sont barrées dès qu'elles sont utilisées."
+};
+
+function renderReglePresentation(op){
+  // Affichee UNE SEULE FOIS par carte (pas par calcul), sous le titre —
+  // une phrase par ligne plutot qu'un paragraphe compact.
+  const lignes = [RAPPEL_ARDOISE, ...REGLES_PRESENTATION_LIGNES, REGLE_RETENUE[op] || ''];
+  return '<div class="regle-bloc">' +
+    lignes.filter(Boolean).map((l, i) =>
+      `<p class="${i === 0 ? 'regle-rappel' : 'regle-detail'}">${l}</p>`
+    ).join('') +
+    '</div>';
+}
+
+function renderLine(terms, op, showResult, prefix){
+  const expr = terms.map(t=>String(t)).join(` ${OP_SYMBOL[op]} `) + ' =';
+  const droite = showResult
+    ? `<span class="ligne-saisie">${computeResult(terms, op)}</span>`
+    : `<span class="ligne-saisie"><input type="text" inputmode="numeric" class="line-input" id="line-answer-input-${prefix}"></span>`;
+  return `<span class="ligne-expr">${expr}</span>${droite}`;
+}
+
+function renderOneItem(item, showCorrection, prefix){
+  if(!item.guided){
+    return renderLine(item.terms, item.op, showCorrection, prefix);
+  }
+  return renderGrid(item.terms, item.op, showCorrection, prefix);
+}
+
+function renderItemBlock(item, showCorrection, i, lettre){
+  // Un seul bloc "carte" (etiquette + calcul) — extrait de renderCard pour
+  // pouvoir etre regenere INDIVIDUELLEMENT (correction partielle : seuls les
+  // calculs faux sont corriges, les justes restent affiches tels quels).
+  // display:contents (voir CSS) fait que label + calcul deviennent des
+  // cellules DIRECTES de la grille parente, pour un alignement colonne par
+  // colonne entre les lignes empilees (ceintures autonomes).
+  const label = lettre ? `<div class="item-label" id="item-label-${i}">${lettre}</div>` : '<div class="item-label-vide"></div>';
+  return `<div class="item-block" id="item-block-${i}">${label}${renderOneItem(item, showCorrection, i)}</div>`;
+}
+
+function renderCard(items, showCorrection){
+  // affiche TOUS les calculs de la carte en meme temps (comme sur la carte
+  // papier) plutot que de naviguer entre eux un par un. Ceintures guidees :
+  // cote a cote (grille). Ceintures autonomes (calcul en ligne) : empilees
+  // verticalement et alignees en colonnes (etiquette | expression | saisie),
+  // avec la regle de presentation affichee UNE FOIS, sous le titre.
+  const lettres = ['A','B','C','D','E','F'];
+  const tousAutonomes = items.every(it => !it.guided);
+  const parts = items.map((item, i) =>
+    renderItemBlock(item, showCorrection, i, items.length > 1 ? (lettres[i] || (i+1)) : null)
+  );
+  if(tousAutonomes){
+    const regle = renderReglePresentation(items[0].op);
+    return regle + '<div class="grid-wrap stacked">' + parts.join('') + '</div>';
+  }
+  return '<div class="grid-wrap">' + parts.join('') + '</div>';
+}
+
+function checkOneItem(item, prefix){
+  const resultStr = String(computeResult(item.terms, item.op));
+  if(!item.guided){
+    const input = document.getElementById(`line-answer-input-${prefix}`);
+    if(!input) return false;
+    const ok = input.value.trim() === resultStr;
+    input.classList.remove('correct','incorrect');
+    input.classList.add(ok ? 'correct' : 'incorrect');
+    return ok;
+  }
+  const digitStrs = item.terms.map(t=>String(t));
+  const ncols = Math.max(Math.max(...digitStrs.map(s=>s.length)), resultStr.length);
+  const pad = ncols - resultStr.length;
+  let allOk = true;
+
+  // 1) chiffres du resultat
+  for(let colI=0; colI<ncols; colI++){
+    const input = document.getElementById(`digit-input-${prefix}-${colI}`);
+    if(!input) continue;
+    const expected = colI >= pad ? resultStr[colI-pad] : '';
+    const got = input.value.trim();
+    const ok = (expected === '') ? (got === '' || got === '0') : (got === expected);
+    input.classList.remove('correct','incorrect');
+    input.classList.add(ok ? 'correct' : 'incorrect');
+    if(!ok) allOk = false;
+  }
+
+  // 2) retenues (addition, multiplication) ou cassages (soustraction)
+  if(item.op === '+' || item.op === 'x'){
+    const carryIn = item.op === '+' ? carryColumns(item.terms, ncols) : multCarryColumns(item.terms[0], item.terms[1], ncols);
+    for(let colI=0; colI<ncols-1; colI++){
+      const place = ncols-1-colI;
+      const input = document.getElementById(`carry-input-${prefix}-${colI}`);
+      if(!input) continue;
+      const expected = carryIn[place] > 0 ? String(carryIn[place]) : '';
+      const got = input.value.trim();
+      const ok = got === expected;
+      input.classList.remove('correct','incorrect');
+      input.classList.add(ok ? 'correct' : 'incorrect');
+      if(!ok) allOk = false;
+    }
+  } else if(item.op === '-'){
+    const r = borrowAdjust(item.terms[0], item.terms[1], ncols);
+    for(let colI=0; colI<ncols; colI++){
+      const place = ncols-1-colI;
+      const input = document.getElementById(`cassage-input-${prefix}-${colI}`);
+      const topDigit = document.getElementById(`topdigit-${prefix}-${colI}`);
+      let ok = true;
+      if(input){
+        const expected = r.changed[place] ? String(r.effective[place]) : '';
+        const got = input.value.trim();
+        ok = got === expected;
+        input.classList.remove('correct','incorrect');
+        input.classList.add(ok ? 'correct' : 'incorrect');
+        if(!ok) allOk = false;
+      }
+      if(topDigit){
+        // Le chiffre ne se barre QU'AU MOMENT DE LA VERIFICATION, jamais avant
+        // (barrer a l'affichage reviendrait a donner la reponse a "ou faut-il
+        // un cassage ?"). Vert si la compensation est juste, rouge si un
+        // cassage etait attendu ici mais raté ou non saisi ; pas de barre du
+        // tout si aucun cassage n'etait necessaire dans cette colonne.
+        topDigit.classList.remove('struck-correct', 'struck-incorrect');
+        if(r.changed[place]){
+          topDigit.classList.add(ok ? 'struck-correct' : 'struck-incorrect');
+        }
+      }
+    }
+  }
+
+  return allOk;
+}
+
+function checkCard(items){
+  // verifie chaque calcul de la carte independamment, retourne un tableau
+  // de booleens (un par calcul) — le moteur generique en fait la synthese.
+  return items.map((item, i) => checkOneItem(item, i));
+}
+
+
+// ============================================================
+// Moteur generique (ceci ne change pas d'une discipline a l'autre)
+// ============================================================
+const CARDS = [{"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [97, 3], "op": "-", "guided": true}, {"terms": [43, 2], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [62, 2], "op": "-", "guided": true}, {"terms": [23, 3], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [97, 6], "op": "-", "guided": true}, {"terms": [36, 4], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [14, 4], "op": "-", "guided": true}, {"terms": [22, 2], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [98, 5], "op": "-", "guided": true}, {"terms": [49, 5], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [89, 2], "op": "-", "guided": true}, {"terms": [39, 4], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [17, 1], "op": "-", "guided": true}, {"terms": [45, 3], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [98, 6], "op": "-", "guided": true}, {"terms": [29, 5], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [25, 3], "op": "-", "guided": true}, {"terms": [54, 4], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [24, 1], "op": "-", "guided": true}, {"terms": [76, 4], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [65, 3], "op": "-", "guided": true}, {"terms": [32, 2], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [16, 3], "op": "-", "guided": true}, {"terms": [83, 2], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [42, 2], "op": "-", "guided": true}, {"terms": [94, 1], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [74, 1], "op": "-", "guided": true}, {"terms": [27, 5], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 1 CHIFFRE", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [45, 2], "op": "-", "guided": true}, {"terms": [59, 2], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [98, 63], "op": "-", "guided": true}, {"terms": [75, 33], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [84, 64], "op": "-", "guided": true}, {"terms": [98, 15], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [65, 62], "op": "-", "guided": true}, {"terms": [88, 66], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [79, 73], "op": "-", "guided": true}, {"terms": [98, 24], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [94, 84], "op": "-", "guided": true}, {"terms": [81, 70], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [44, 13], "op": "-", "guided": true}, {"terms": [73, 10], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [86, 76], "op": "-", "guided": true}, {"terms": [87, 50], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [95, 31], "op": "-", "guided": true}, {"terms": [54, 52], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [49, 41], "op": "-", "guided": true}, {"terms": [97, 14], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [96, 76], "op": "-", "guided": true}, {"terms": [94, 40], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [62, 30], "op": "-", "guided": true}, {"terms": [85, 11], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [95, 41], "op": "-", "guided": true}, {"terms": [41, 30], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [66, 62], "op": "-", "guided": true}, {"terms": [46, 16], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [47, 14], "op": "-", "guided": true}, {"terms": [63, 41], "op": "-", "guided": true}]}, {"recto": "SOUSTRACTION 2 CHIFFRES - 2 CHIFFRES", "verso": "SOUSTRACTION SANS CASSAGE", "rappel": false, "items": [{"terms": [77, 71], "op": "-", "guided": true}, {"terms": [84, 71], "op": "-", "guided": true}]}];
+const ITEM_LABEL = "CALCUL";
+const PAGE_TITLE = "Ceinture VERTE";
+const TEACHER_EMAIL = "euryale_tsipora@protonmail.me";
+const TEACHER_PIN = "0616";
+const EMAIL_ENABLED = false; // desactive temporairement l'ouverture de la messagerie en fin de seance ; le PDF continue d'etre genere et telecharge normalement
+const SESSION_STORAGE_KEY = 'calcpose_sessionLog';
+const NAME_STORAGE_KEY = 'calcpose_studentName';
+let cardIdx = 0;
+let showingCorrection = false;
+let teacherMode = false;
+let hasAttemptedCurrent = false;
+
+// La seance est memorisee dans le navigateur (localStorage) pour survivre a un
+// changement de page (une ceinture = un fichier different) : sans ca, tout ce
+// qui a ete fait sur une ceinture visitee avant celle-ci serait perdu au moment
+// du PDF final. Repli silencieux sur une seance vide si localStorage est
+// indisponible (navigation privee, restrictions navigateur...).
+function chargerSession(){
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+function sauverSession(){
+  try { localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionLog)); } catch(e) {}
+}
+function chargerNomEleve(){
+  const injecte = "";
+  if(injecte) return injecte; // fiche personnalisee : le nom est deja connu, prioritaire
+  try { return localStorage.getItem(NAME_STORAGE_KEY) || ""; } catch(e) { return ""; }
+}
+function sauverNomEleve(){
+  try { localStorage.setItem(NAME_STORAGE_KEY, studentName); } catch(e) {}
+}
+function viderSession(){
+  try { localStorage.removeItem(SESSION_STORAGE_KEY); localStorage.removeItem(NAME_STORAGE_KEY); } catch(e) {}
+  sessionLog = [];
+}
+
+let sessionLog = chargerSession(); // {belt, carte, ok, results}
+let studentName = chargerNomEleve();
+let lastResults = []; // resultats (booleens) de la derniere verification sur la carte affichee
+
+function updateSessionScore(){
+  const total = sessionLog.length;
+  const ok = sessionLog.filter(e => e.ok).length;
+  document.getElementById('session-score').textContent = `Séance : ${ok}/${total}`;
+}
+
+function render(){
+  showingCorrection = false;
+  hasAttemptedCurrent = false;
+  lastResults = [];
+  updateCalcArea();
+  document.getElementById('progress-btn').textContent = `Carte ${cardIdx+1} / ${CARDS.length}`;
+}
+
+function updateCalcArea(){
+  const card = CARDS[cardIdx];
+  const beltTag = card.belt_name
+    ? `<span class="belt-origin-tag" style="background:${card.belt_color};">${card.belt_name}</span>`
+    : '';
+  document.getElementById('carte-indicator').innerHTML =
+    `CARTE ${cardIdx+1}` + beltTag + (card.rappel ? '<span class="rappel-tag">(rappel)</span>' : '');
+  document.getElementById('palier-label').innerHTML = showingCorrection ? card.verso : card.recto;
+  document.getElementById('calc-area').innerHTML = renderCard(card.items, showingCorrection);
+  document.getElementById('feedback-msg').textContent = '';
+  document.getElementById('feedback-msg').className = '';
+  document.getElementById('btn-verifier').style.display = showingCorrection ? 'none' : '';
+  refreshCorrectionButton();
+}
+
+function refreshCorrectionButton(){
+  const btnCorrection = document.getElementById('btn-correction');
+  const locked = !teacherMode && !hasAttemptedCurrent && !showingCorrection;
+  btnCorrection.disabled = locked;
+  btnCorrection.title = locked ? "Vérifie d'abord ta réponse pour débloquer la correction" : "";
+  btnCorrection.textContent = locked
+    ? '🔒 Vérifie ta réponse d\'abord'
+    : (showingCorrection ? 'Retour à l\'énoncé (espace)' : 'Voir la correction (espace)');
+}
+
+function verifierReponse(){
+  const card = CARDS[cardIdx];
+  if(typeof checkCard === 'function'){
+    const results = checkCard(card.items); // tableau de booleens, un par calcul de la carte
+    const allOk = results.every(r => r);
+    const msg = document.getElementById('feedback-msg');
+    if(allOk){
+      msg.textContent = 'Bravo, les deux calculs sont justes !';
+    } else if(results.some(r => r)){
+      msg.textContent = 'Un calcul est juste, l\'autre pas encore — corrige et réessaie.';
+    } else {
+      msg.textContent = 'Pas encore juste — corrige et réessaie.';
+    }
+    msg.className = allOk ? 'ok' : 'ko';
+    results.forEach((ok, i) => {
+      const label = document.getElementById(`item-label-${i}`);
+      if(label){
+        label.classList.remove('correct', 'incorrect');
+        label.classList.add(ok ? 'correct' : 'incorrect');
+      }
+    });
+    hasAttemptedCurrent = true;
+    lastResults = results;
+    const beltLabel = card.belt_name || PAGE_TITLE;
+    sessionLog.push({belt: beltLabel, carte: cardIdx+1, ok: allOk, results: results});
+    sauverSession();
+    updateSessionScore();
+    refreshCorrectionButton();
+  }
+}
+
+function toggleTeacherMode(){
+  if(teacherMode){
+    teacherMode = false;
+    document.getElementById('btn-mode').textContent = '👤 Élève';
+    document.getElementById('btn-mode').classList.remove('teacher');
+  } else {
+    const code = prompt("Code enseignant :");
+    if(code === null) return;
+    if(code === TEACHER_PIN){
+      teacherMode = true;
+      document.getElementById('btn-mode').textContent = '🔓 Enseignant';
+      document.getElementById('btn-mode').classList.add('teacher');
+    } else {
+      alert("Code incorrect.");
+      return;
+    }
+  }
+  refreshCorrectionButton();
+}
+
+const LETTRES = ['A','B','C','D','E','F'];
+
+function terminerSeance(){
+  if(sessionLog.length === 0){
+    alert("Aucune vérification n'a encore été faite pendant cette séance.");
+    return;
+  }
+  if(!studentName){
+    const saisie = prompt("Quel est ton prénom ?");
+    if(!saisie){ alert("Le prénom est nécessaire pour enregistrer la séance."); return; }
+    studentName = saisie.trim();
+    sauverNomEleve();
+  }
+
+  const total = sessionLog.length;
+  const ok = sessionLog.filter(e => e.ok).length;
+  const dateStr = new Date().toLocaleDateString('fr-FR');
+  const heureStr = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+  const titreComplet = `${studentName} — ${dateStr}`;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text(`Séance de calcul posé — ${titreComplet}`, 14, 18);
+  doc.setFontSize(11);
+  doc.text(`Date : ${dateStr} à ${heureStr}`, 14, 28);
+  doc.text(`Score de la séance : ${ok} / ${total}`, 14, 36);
+  doc.text("Détail (toutes ceintures travaillées pendant la séance) :", 14, 46);
+  let y = 54;
+  sessionLog.forEach((e, i) => {
+    if(y > 280){ doc.addPage(); y = 20; }
+    const detail = e.results
+      ? e.results.map((r, k) => `${LETTRES[k] || (k+1)}:${r ? 'juste' : 'à revoir'}`).join('  ')
+      : (e.ok ? 'juste' : 'à revoir');
+    doc.text(`${i+1}. ${e.belt} — Carte ${e.carte} — ${detail}`, 18, y);
+    y += 7;
+  });
+
+  const slug = studentName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,'_');
+  const fname = `seance_${slug}_${dateStr.replace(/\//g,'-')}.pdf`;
+  doc.save(fname);
+
+  if(EMAIL_ENABLED){
+    const sujet = encodeURIComponent(`Séance calcul posé — ${titreComplet}`);
+    const corps = encodeURIComponent(
+      `Bonjour,\n\nVoici le résumé de séance de ${studentName} du ${dateStr} à ${heureStr}.\n` +
+      `Score : ${ok}/${total}.\n\nLe fichier "${fname}" vient d'être téléchargé — merci de le joindre à cet e-mail avant de l'envoyer.\n`
+    );
+    const mailto = `mailto:${TEACHER_EMAIL}?subject=${sujet}&body=${corps}`;
+    window.location.href = mailto;
+  } else {
+    alert(`Séance enregistrée ! Le fichier "${fname}" vient d'être téléchargé.`);
+  }
+
+  viderSession();
+  studentName = "";
+  updateSessionScore();
+}
+
+function toggleCorrection(){
+  if(!teacherMode && !hasAttemptedCurrent && !showingCorrection) return; // verrouille tant que non tente
+  showingCorrection = !showingCorrection;
+  const card = CARDS[cardIdx];
+  const lettres = ['A','B','C','D','E','F'];
+  document.getElementById('palier-label').innerHTML = showingCorrection ? card.verso : card.recto;
+  document.getElementById('feedback-msg').textContent = '';
+  document.getElementById('feedback-msg').className = '';
+  document.getElementById('btn-verifier').style.display = showingCorrection ? 'none' : '';
+
+  // Dans les deux sens, on ne touche QUE les calculs qui ne sont pas deja
+  // justes : un calcul verifie correct reste affiche tel que l'eleve l'a
+  // saisi, que l'on aille vers la correction ou que l'on en revienne — pas de
+  // remise a zero qui effacerait un travail deja reussi.
+  if(typeof renderItemBlock === 'function'){
+    card.items.forEach((item, i) => {
+      if(lastResults[i] !== true){
+        const bloc = document.getElementById(`item-block-${i}`);
+        if(bloc){
+          const lettre = card.items.length > 1 ? (lettres[i] || (i+1)) : null;
+          bloc.outerHTML = renderItemBlock(item, showingCorrection, i, lettre);
+          const label = document.getElementById(`item-label-${i}`);
+          if(label && showingCorrection) label.classList.add('incorrect');
+        }
+      }
+    });
+  } else {
+    document.getElementById('calc-area').innerHTML = renderCard(card.items, showingCorrection);
+  }
+
+  refreshCorrectionButton();
+}
+function go(delta){
+  cardIdx = (cardIdx + delta + CARDS.length) % CARDS.length;
+  render();
+}
+function goTo(n){
+  cardIdx = Math.max(0, Math.min(CARDS.length-1, n-1));
+  render();
+  closePicker();
+}
+
+function openPicker(){
+  const grid = document.getElementById('picker-grid');
+  grid.innerHTML = '';
+  CARDS.forEach((card, i) => {
+    const b = document.createElement('button');
+    b.textContent = i+1;
+    if(i === cardIdx) b.classList.add('current');
+    b.onclick = () => goTo(i+1);
+    grid.appendChild(b);
+  });
+  document.getElementById('overlay').classList.add('show');
+}
+function closePicker(){ document.getElementById('overlay').classList.remove('show'); }
+
+document.getElementById('progress-btn').onclick = openPicker;
+document.getElementById('picker-close').onclick = closePicker;
+document.getElementById('overlay').onclick = (e)=>{ if(e.target.id==='overlay') closePicker(); };
+document.getElementById('picker-go').onclick = ()=>{
+  const v = parseInt(document.getElementById('picker-input').value);
+  if(v) goTo(v);
+};
+document.getElementById('prev').onclick = ()=>go(-1);
+document.getElementById('next').onclick = ()=>go(1);
+document.getElementById('btn-correction').onclick = toggleCorrection;
+document.getElementById('btn-verifier').onclick = verifierReponse;
+document.getElementById('btn-fin-seance').onclick = terminerSeance;
+document.getElementById('btn-mode').onclick = toggleTeacherMode;
+document.addEventListener('keydown', (e)=>{
+  if(document.getElementById('overlay').classList.contains('show')) return;
+  if(e.key === 'ArrowRight') go(1);
+  else if(e.key === 'ArrowLeft') go(-1);
+  else if(e.key === ' '){ e.preventDefault(); toggleCorrection(); }
+});
+
+render();
+updateSessionScore();
+</script>
+</body>
+</html>
